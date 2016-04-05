@@ -1,6 +1,9 @@
 #!/usr/bin python
 
+from player import Player
+import game_functions as gf
 import random
+from city import City
 
 __author__ = 'andrewjohnson'
 
@@ -9,204 +12,93 @@ __author__ = 'andrewjohnson'
 #CC 2015 Non-Commercial use Attribution license
 
 welcome = "Welcome to Organ Entrails!\nYou must make it from city to city, killing zombies along the way.\nCareful, they bite!"
-
-life = 20
-
-zombies = 0
-
-hitMultiplier = [0, 1, 1, 2, 2, 2, 2, 2, 3, 3, 4]
-
-weapon = {"Crowbar": 1, "Pistol": 2, "Shovel": 3, "Crossbow": 4, "Shotgun": 5, "Bazooka": 7}
-
-supplies = ["Duct Tape", "Paracord", "Pack of Gum", "Garden Hose", "Half Empty Can of Axe Body Spray", "Petunia", "Candy Bar"]
-
-inventory = {"Toilet Paper": 5,
-             "Duct Tape": 1,
-             "Paracord": 1,
-             "Pack of Gum": 1,
-             "Garden Hose": 0,
-             "Half Empty Can of Axe Body Spray": 0,
-             "Petunia": 0,
-             "Candy Bar" : 0
-             }
-
-flavorText = {"Toilet Paper": "The soft cottonelle does wonders for your chapped skin. It's the little things to be thankful for.",
-              "Duct Tape": "Pretty much good for everything-- wrap a steak in it and it will keep indefinitely.",
-              "Paracord": "Your braided bracelet makes you look cool and if you get lost you'll have like 7 feet of rope.",
-              "Pack of Gum": "The flavor only lasts for a moment. Alas, this is cheap gum, and the good stuff is hard to come by.",
-              "Garden Hose": "Hooking up the hose to the spigot provides adequate water for your beautiful petunias.",
-              "Half Empty Can of Axe Body Spray": "The awkward smell of middle school envelopes your body, reminding you of the futility of life.",
-              "Petunia": "It never hurts to make an Apocalypse beautiful.",
-              "Candy Bar" : "Slightly sweet, slightly sour with rich tones of military surplus rations. Still, it ain't bad."
-            }
-
-myWeapons = ["Crowbar"]
-
-cities = ["Zombietown", "The Wastelands", "Detroit", "Brainsville"]
+cities = []
 youAreHere = 0
-
-def fightZombies(zombies):
-    global life
-    if zombies != 0:
-        print(str(zombies) + " zombies stagger towards you. Ready your " + str.lower(myWeapons[0]) + "!\n")
-        attack = raw_input("Attack, or Run? (A for attack, R for run)\n")
-        if (str.upper(attack) != "A"):
-            hit = (hitMultiplier[random.randrange(0, len(hitMultiplier))]*weapon[myWeapons[0]]) - zombies
-            print(str(hit))
-            if hit > 0:
-                life = life - hit
-            if (hit == 0):
-                print("That was a lucky miss. Next time you should attack!")
-            else:
-                print(str(zombies) + " zombies ravaged you. Your life health is now " + str(life))
-    elif zombies == 0:
-         print ("But Nobody Came!")
-    else:
-        hit = (hitMultiplier[random.randrange(0, len(hitMultiplier))]*weapon[myWeapons[0]]) - zombies
-        if hit > 0:
-            life = life - hit
-        print (str(zombies) + " attack you.\n" "Life health is now " + str(life))
-
-
-def lootHouse():
-    global life
-    runAway = False
-    loot = raw_input("Loot house? (Y/N)\n")
-    if(str.upper(loot) == "Y"):
-        foundItem = supplies[random.randrange(0, len(supplies)-1)]
-        foundWeapon = weapon.keys()[random.randrange(1, len(weapon)-1)]
-        zombies = random.randrange(0, 4)
-        print(str(zombies) + " zombies found in house.")
-        if zombies != 0:
-            attack = raw_input("Attack or Run? (A/R)\n")
-            if str.upper(attack) == "A":
-                hit = zombies-1 * (hitMultiplier[random.randrange(0, len(hitMultiplier)-4)])
-                life = life - hit
-                print (str(zombies) + " attack you.\n" "Life health is now " + str(life))
-            else:
-                runAway = True
-                print("You run away quietly, with no cool stuff.")
-        else:
-            print ("The house is empty of zombies, but full of cool stuff...")
-        if (runAway != True):
-            takeItem = raw_input("You found a " + foundItem + "\nEquip? (Y/N)")
-            takeWeapon = raw_input("Cool! You found a " + foundWeapon + "\nEquip? (Y/N)")
-            if str.upper(takeWeapon) == "Y": myWeapons.insert(0, foundWeapon)
-            if str.upper(takeItem) == "Y": inventory[foundItem] += 1
-            print ("Current weapon: " + str(myWeapons[0]))
-            print ("Destruction power: " + str(weapon[myWeapons[0]]))
-            print("Inventory:\n==========")
-            for item in inventory:
-                if(inventory[item] > 0):
-                    print (item + ": " + str(inventory[item]))
-            print("\n")
-
-def lootBodies():
-    loot = raw_input("Would you like to loot the bodies? (Y/N)\n")
-    if (str.upper(loot) == "Y"):
-        if (random.randrange(0,9)>8):
-            print("A zombie was not yet dead!\n")
-            hit = 1 * hitMultiplier[random.randrange(0, len(hitMultiplier))]
-            life = life - hit
-            print("Zombie did " + str(hit) + " damage to you.\nYour life is " + str(life))
-        else:
-            foundItem = supplies[random.randrange(0, len(supplies)-1)]
-            print("You found a " + foundItem)
-            equip = raw_input("Equip? (Y/N)")
-            if (str.upper(equip) == "Y"):
-                inventory[foundItem] += 1
-                print ("Inventory: " + str(inventory))
+        
 
 def leaveCity():
+    """Change to a different city"""
     global cities
     global youAreHere
-    print("Where would you like to go? You are currently in " + cities[youAreHere])
+    print("Where would you like to go? You are currently in " + cities[youAreHere].name)
     whereTo = ""
     i = 1
     for city in cities:
         if city != cities[youAreHere]:
-            whereTo = whereTo + "   " + str(i) + ") " + city + "\n"
+            whereTo = whereTo + "   " + str(i) + ") " + city.name + "\n"
             i = i + 1
-    cityIndex =  int(raw_input("I want to go to: " + "\n" + whereTo))
-    youAreHere = cityIndex
-    print("Welcome to " + cities[youAreHere])
+    cityIndex =  int(input("I want to go to: " + "\n" + whereTo))
+    if youAreHere >= cityIndex: # for loop creates incorrect index. for all cities less than current city
+        youAreHere = cityIndex -1
+    else:
+        youAreHere = cityIndex
+    print("Welcome to " + cities[youAreHere].name)
+    print (cities[youAreHere].description)
 
-def checkInventory():
-    global life
-    global flavorText
-    print ("Current weapon: " + str(myWeapons[0]))
-    print ("Destruction power: " + str(weapon[myWeapons[0]]))
-    print("Inventory:\n==========")
-    i = 1
-    invArray = []
-    for item in inventory:
-        if(inventory[item] > 0):
-            print (str(i) + ") " + item + ": " + str(inventory[item]))
-            invArray.append(item)
-            i = i + 1
-    print str(i) + ") Exit Inventory"
-    inventoryIndex = int(raw_input("Select the item from the list.\n"))-1
-    if inventoryIndex != len(invArray):
-        myItem = invArray[inventoryIndex]
-        if myItem == "Candy Bar":
-            life = life + 5
-        print flavorText[myItem]
-        inventory[myItem] -= 1
+player = Player()
 
+Zombietown = City("Zombietown", "Ground zero of the outbreak")
+cities.append(Zombietown)
+Wastelands = City("The Wastelands" , "There is not much here but zombies")
+cities.append(Wastelands)
+Detroit = City("Detroit", "Detroit has always been rough, but now it is deadly")
+cities.append(Detroit)
+Brainsville= City ("Brainsville" , "These zombies have devoloped a taste for brains")
+cities.append(Brainsville)
+Zombietown.active = True
 
-def changeWeapon():
-    print("Current weapon equipped: " + myWeapons[0])
-    print ("Select weapon to equip from the list.")
-    i = 1
-    for weapon in myWeapons:
-        print str(i) + ") " + weapon
-        i += 1
-    equip = int(raw_input("Equip:\n"))-1
-    w = myWeapons.pop(equip)
-    myWeapons.insert(0, w)
-
-    print myWeapons[0] + " is equipped.\n"
-
-
+# Game Starts here:
 print (welcome)
+print ("You start in " + Zombietown.name + " " + Zombietown.description + " good luck!")
 print ("\nLook, a small horde of zombies approaches! Take this crowbar and go bash some heads!")
 
-ready = raw_input("Ready to fight?\n")
+ready = input("Ready to fight? (Y/N)\n")
 
 if (str.upper(ready) != "Y"):
-    print "Too bad, this is Zombietown. You better get ready.\n"
+    print ("Too bad, this is Zombietown. You better get ready.\n")
 else:
-    print "Lock and load!\n"
+    print ("Lock and load!\n")
 
-fightZombies(3)
-lootBodies()
+gf.fightZombies(player, cities[youAreHere],3)
+gf.lootBodies(player)
 
 print("Now let's go loot a house")
-lootHouse()
+gf.lootHouse(player, cities[youAreHere])
 
 print("You seem to be getting this on your own. Here's a candy bar to restore your health, and one for the road. \n")
-inventory["Candy Bar"] += 1
-life = 20
+player.update_inventory("Candy Bar")
+player.life = 20
 
-while (life > 0):
-    print("Life: " + str(life))
-    action = raw_input("What would you like to do now?\n1)Find more zombies\n2)Loot more houses\n3)Leave the city\n4)Check inventory\n5)Change Weapon\n\n")
-    if (action == "1"):
-
-        fightZombies(random.randrange(0,10))
-        if (life > 0) and zombies !=0:
-            lootBodies()
-        elif (life <= 0):
-            break 
+while (player.life > 0):
+    print("Life: " + str(player.life))
+    print ("Zombies left in " + cities[youAreHere].name + ": " + str(cities[youAreHere].zombies))
+    print ("House left to loot in " + cities[youAreHere].name + ": " + str(cities[youAreHere].house))
+    action = input("What would you like to do now?\n1)Find more zombies\n2)Loot more houses\n3)Leave the city\n4)Check inventory\n5)Change Weapon\n6)Exit Game\n\n")
+    if (action == "1"):  #case statement does the same thing.  Which is better for this?
+        if cities[youAreHere].zombies > 0 :
+            zombies = random.randrange(0,10)
+            gf.fightZombies(player, cities[youAreHere], zombies)
+            if (player.life > 0) and zombies !=0:
+                gf.lootBodies(player)
+            elif (player.life <= 0):
+                break
+        else:
+            print ("There are no more zombies in this city.  Try somewhere else")
     elif (action == "2"):
-        lootHouse()
+        if cities[youAreHere].house > 0 :
+            gf.lootHouse(player,cities[youAreHere])
+        else:
+            print ("There are no more houses to loot.  Try somewhere else")
     elif (action == "3"):
         leaveCity()
     elif (action == "4"):
-        checkInventory()
+        gf.checkInventory(player)
     elif (action == "5"):
-        changeWeapon()
+        player.changeWeapon()
+    elif (action =="6"):
+        print ("At the first sign of weekness all zombies gang up on you!")
+        break
     else:
         print("Invalid input!")
 
-print("You died.")
+print("You killed a total of " + str(player.zombies_killed) + " zombies.  Then you died.")
