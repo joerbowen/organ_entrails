@@ -1,6 +1,7 @@
 #!/usr/bin python
 
 from player import Player
+from inventory import Inventory
 import game_functions as gf
 import random
 from city import City
@@ -12,31 +13,30 @@ __author__ = 'andrewjohnson'
 #CC 2015 Non-Commercial use Attribution license
 
 welcome = "Welcome to Organ Entrails!\nYou must make it from city to city, killing zombies along the way.\nCareful, they bite!"
+
+# create an list of inventory objects       
+inventory =[]
+toiletPaper = Inventory ("Toilet Paper", "The soft conttonelle does wonders for your chapped skin It's the little things to be thankful for.", 5)
+inventory.append(toiletPaper)
+ductTape= Inventory("Duct Tape", "Pretty much good for everything-- wrap a steak in it and it will keep idefinitely.",1)
+inventory.append(ductTape)
+paracord = Inventory ("Paracord" , "Your braided bracelet makes you look cool and if you get lost you'll have like 7 feet of rope.", 1)
+inventory.append(paracord)
+gum= Inventory("Pack of Gum", "The flavor only last for a moment.  Alas, this is cheap gum, and the good stuff is hard to come by.", 1)
+inventory.append(gum)
+hose = Inventory("Garden Hose", "Hooking up the hose to the spigot provides adqequate water for your beautiful petunias." ,0)
+inventory.append(hose)
+axeSpray = Inventory("Half Empty Can of Axe Body Spray", "The awkward smell of middle school envelopes your body, reminding you of the futility of life.", 0)
+inventory.append(axeSpray)
+petunia = Inventory("Petunia" , "It neve hurts to make an Apocalypse beautiful." ,0)
+inventory.append(petunia)
+candybar = Inventory("Candy Bar", "Slightly sweet, slightly sour with rich tones of military surplus rations.  Still, it ain't bad.", 0)
+inventory.append(candybar)
+
+player = Player(inventory)
+
+#create an list of city objects
 cities = []
-youAreHere = 0
-        
-
-def leaveCity():
-    """Change to a different city"""
-    global cities
-    global youAreHere
-    print("Where would you like to go? You are currently in " + cities[youAreHere].name)
-    whereTo = ""
-    i = 1
-    for city in cities:
-        if city != cities[youAreHere]:
-            whereTo = whereTo + "   " + str(i) + ") " + city.name + "\n"
-            i = i + 1
-    cityIndex =  int(input("I want to go to: " + "\n" + whereTo))
-    if youAreHere >= cityIndex: # for loop creates incorrect index. for all cities less than current city
-        youAreHere = cityIndex -1
-    else:
-        youAreHere = cityIndex
-    print("Welcome to " + cities[youAreHere].name)
-    print (cities[youAreHere].description)
-
-player = Player()
-
 Zombietown = City("Zombietown", "Ground zero of the outbreak")
 cities.append(Zombietown)
 Wastelands = City("The Wastelands" , "There is not much here but zombies")
@@ -45,7 +45,6 @@ Detroit = City("Detroit", "Detroit has always been rough, but now it is deadly")
 cities.append(Detroit)
 Brainsville= City ("Brainsville" , "These zombies have devoloped a taste for brains")
 cities.append(Brainsville)
-Zombietown.active = True
 
 # Game Starts here:
 print (welcome)
@@ -59,38 +58,40 @@ if (str.upper(ready) != "Y"):
 else:
     print ("Lock and load!\n")
 
-gf.fightZombies(player, cities[youAreHere],3)
-gf.lootBodies(player)
+gf.fightZombies(player, cities[player.city_index],3)
+
 
 print("Now let's go loot a house")
-gf.lootHouse(player, cities[youAreHere])
+gf.lootHouse(player, cities[player.city_index])
 
 print("You seem to be getting this on your own. Here's a candy bar to restore your health, and one for the road. \n")
-player.update_inventory("Candy Bar")
+item = player.getInventoryIndex("Candy Bar")
+player.update_inventory(item)
 player.life = 20
 
 while (player.life > 0):
-    print("Life: " + str(player.life))
-    print ("Zombies left in " + cities[youAreHere].name + ": " + str(cities[youAreHere].zombies))
-    print ("House left to loot in " + cities[youAreHere].name + ": " + str(cities[youAreHere].house))
+    print("\nLife: " + str(player.life))
+    print ("Zombies left in " + cities[player.city_index].name + ": " + str(cities[player.city_index].zombies))
+    print ("House left to loot in " + cities[player.city_index].name + ": " + str(cities[player.city_index].house))
     action = input("What would you like to do now?\n1)Find more zombies\n2)Loot more houses\n3)Leave the city\n4)Check inventory\n5)Change Weapon\n6)Exit Game\n\n")
     if (action == "1"):  #case statement does the same thing.  Which is better for this?
-        if cities[youAreHere].zombies > 0 :
-            zombies = random.randrange(0,10)
-            gf.fightZombies(player, cities[youAreHere], zombies)
-            if (player.life > 0) and zombies !=0:
-                gf.lootBodies(player)
-            elif (player.life <= 0):
-                break
+        if cities[player.city_index].zombies > 0 :
+            zombies = random.randrange(1,10)
+            if zombies < cities[player.city_index].zombies :
+                gf.fightZombies(player, cities[player.city_index], zombies)
+            else:
+                print ("These are the last zombies roaming the city")
+                print ("There may be more hiding in houses")
+                gf.fightZombies(player, cities[player.city_index], cities[player.city_index].zombies)
         else:
             print ("There are no more zombies in this city.  Try somewhere else")
     elif (action == "2"):
-        if cities[youAreHere].house > 0 :
-            gf.lootHouse(player,cities[youAreHere])
+        if cities[player.city_index].house > 0 :
+            gf.lootHouse(player,cities[player.city_index])
         else:
             print ("There are no more houses to loot.  Try somewhere else")
     elif (action == "3"):
-        leaveCity()
+        player.leaveCity(cities)
     elif (action == "4"):
         gf.checkInventory(player)
     elif (action == "5"):

@@ -7,11 +7,11 @@ def calculateDamage (power,zombies, attack, house=False):
     hitMultiplier = [0, 1, 1, 2, 2, 2, 2, 2, 3, 3, 4]
     if attack :
         if house:#Zombies are not as effective in a house
-            damage = hitMultiplier[random.randrange(0,len(hitMultiplier)-3)]*zombies - hitMultiplier[random.randrange(0,len(hitMultiplier))] * power
+            damage = hitMultiplier[random.randrange(len(hitMultiplier)-3)]*zombies - hitMultiplier[random.randrange(0,len(hitMultiplier))] * power
         else:
-            damage = hitMultiplier[random.randrange(0,len(hitMultiplier))]*zombies - hitMultiplier[random.randrange(0,len(hitMultiplier))]* power
+            damage = hitMultiplier[random.randrange(len(hitMultiplier))]*zombies - hitMultiplier[random.randrange(0,len(hitMultiplier))]* power
     else :
-        damage = hitMultiplier[random.randrange(0,len(hitMultiplier)-3)]*zombies - power  #zombies are not as strong, but neither is the weapon power multiplied.
+        damage = hitMultiplier[random.randrange(len(hitMultiplier)-3)]*zombies - power  #zombies are not as strong, but neither is the weapon power multiplied.
 
     if damage > 0 :
         return damage
@@ -19,10 +19,9 @@ def calculateDamage (power,zombies, attack, house=False):
         return 0
 
 def getItem(item_dict):
-    list_items=[]  #create a list of keys
-    for item in item_dict:
-        list_items.append(item)
-    return list_items[random.randrange (0, len(list_items))]
+    """get a random item from a dict"""
+    list_items=sorted(item_dict.keys())  #create a list of sorted keys
+    return list_items[random.randrange(len(list_items))]
     
 
 def fightZombies(player,city, zombies):
@@ -41,13 +40,15 @@ def fightZombies(player,city, zombies):
                 print("That was a lucky miss. Next time you should attack!")
         else:
             hit = calculateDamage(destructive_power,zombies,True)
+            player.zombies_killed += zombies
+            city.update_zombies(zombies)
             if hit >0 :
                 player.update_life(hit)
                 print (str(zombies) + " attack you.  They did " + str(hit) + " damage \nLife health is now " + str(player.life))
             else:
                 print("You took no damage!  Your life is still " + str(player.life))
-        player.zombies_killed += zombies
-        city.update_zombies(zombies)
+            if player.life > 0 :
+                lootBodies(player)
     elif zombies == 0:
          print ("But Nobody Came!")
 
@@ -60,9 +61,9 @@ def lootHouse(player,city):
     runAway = False
     loot = input("Loot house? (Y/N)\n")
     if(str.upper(loot) == "Y"):
-        foundItem = getItem(player.inventory)
+        foundItem = random.randrange(len(player.inventory))
         foundWeapon=getItem(weapon)
-        zombies = random.randrange(0, 4)
+        zombies = random.randrange(4)
         print(str(zombies) + " zombies found in house.")
         if zombies != 0:
             attack = input("Attack or Run? (A/R)\n")
@@ -78,7 +79,7 @@ def lootHouse(player,city):
             print ("The house is empty of zombies, but full of cool stuff...")
         if (runAway != True):
             city.update_house()
-            takeItem = input("You found a " + foundItem + "\nEquip? (Y/N)")
+            takeItem = input("You found a " + player.inventory[foundItem].name + "\nEquip? (Y/N)")
             takeWeapon = input("Cool! You found a " + foundWeapon + "\nEquip? (Y/N)")
             if str.upper(takeWeapon) == "Y": player.update_weapon(foundWeapon)
             if str.upper(takeItem) == "Y": player.update_inventory(foundItem)
@@ -90,14 +91,14 @@ def lootBodies(player):
     """Allows user to get random inventory item.  No weapons like in loot house"""
     loot = input("Would you like to loot the bodies? (Y/N)\n")
     if (str.upper(loot) == "Y"):
-        if (random.randrange(0,9)>8):
+        if (random.randrange(9)==8):  
             print("A zombie was not yet dead!\n")
             hit = calculateDamage(3,1,True)# for this fight a destructive power of 3 is assumed no matter what weapon is used.
             player.update_life(hit)
             print("Zombie did " + str(hit) + " damage to you.\nYour life is " + str(player.life))
         else:
-            foundItem = getItem(player.inventory)
-            print("You found a " + foundItem)
+            foundItem = random.randrange(len(player.inventory))
+            print("You found a " + player.inventory[foundItem].name)
             equip = input("Equip? (Y/N)")
             if (str.upper(equip) == "Y"):
                 player.update_inventory(foundItem)
@@ -105,34 +106,23 @@ def lootBodies(player):
 
 def checkInventory(player):
     """List current inventory and allow user to use an item"""
-    flavorText = {"Toilet Paper": "The soft cottonelle does wonders for your chapped skin. It's the little things to be thankful for.",
-              "Duct Tape": "Pretty much good for everything-- wrap a steak in it and it will keep indefinitely.",
-              "Paracord": "Your braided bracelet makes you look cool and if you get lost you'll have like 7 feet of rope.",
-              "Pack of Gum": "The flavor only lasts for a moment. Alas, this is cheap gum, and the good stuff is hard to come by.",
-              "Garden Hose": "Hooking up the hose to the spigot provides adequate water for your beautiful petunias.",
-              "Half Empty Can of Axe Body Spray": "The awkward smell of middle school envelopes your body, reminding you of the futility of life.",
-              "Petunia": "It never hurts to make an Apocalypse beautiful.",
-              "Candy Bar" : "Slightly sweet, slightly sour with rich tones of military surplus rations. Still, it ain't bad."
-            }
-    
     print ("Current weapon: " + str(player.weapons[0]))
     print ("Destruction power: " + str(weapon[player.weapons[0]]))
     print("Inventory:\n==========")
     i = 1
-    invArray = []
+    inventoryList =[]
     for item in player.inventory:
-        if(player.inventory[item] > 0):
-            print (str(i) + ") " + item + ": " + str(player.inventory[item]))
-            invArray.append(item)  #create a list of keys  index = i-1
+        if(item.qty > 0):
+            print (str(i) + ") " + item.name + ": " + str(item.qty))
             i = i + 1
+            inventoryList.append(item.name)  #Array of all inventory items with qty greater than 0
     print (str(i) + ") Exit Inventory")
     inventoryIndex = int(input("Select the item from the list.\n"))-1
-    if inventoryIndex != len(invArray):  #if index = len then exit was selected
-        myItem = invArray[inventoryIndex]
-        print (flavorText[myItem])
-        player.use_inventory(myItem)
+    if inventoryIndex != len(inventoryList):  #if index = len then exit was selected
+        player.use_inventory(inventoryList[inventoryIndex])
 
-        
+
+
 
 
                    
